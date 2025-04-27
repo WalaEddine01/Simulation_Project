@@ -2,53 +2,88 @@
 import pygame
 import pymunk
 import pymunk.pygame_util
-from components import ball, spring, lever
 
-def create_ground(space):
-    ground = pymunk.Segment(space.static_body, (0, HEIGHT-50), (WIDTH, HEIGHT-50), 5)
-    ground.friction = 1.0
-    ground.elasticity = 0.8
-    space.add(ground)
+# Constants
+WIDTH, HEIGHT = 1200, 800
+BACKGROUND_COLOR = (0, 0, 0)
+GRID_COLOR = (50, 50, 50)
+GROUND_COLOR = (100, 100, 100)
+GRID_SPACING = 50
 
-def run():
-    # Initialize
-    pygame.init()
-    WIDTH, HEIGHT = 1200, 800
-    window = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Spring-Mass with Rolling Ball")
+class PhysicsSimulation:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Physics Simulation")
+        self.clock = pygame.time.Clock()
+        self.space = pymunk.Space()
+        self.space.gravity = (0, 981)
+        
+        self.setup_debug_draw()
+        self.create_environment()
     
-    space = pymunk.Space()
-    space.gravity = (0, 981)
+    def setup_debug_draw(self):
+        """Configure physics debug drawing"""
+        self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
+        self.draw_options.flags = (
+            pymunk.SpaceDebugDrawOptions.DRAW_SHAPES |
+            pymunk.SpaceDebugDrawOptions.DRAW_CONSTRAINTS
+        )
     
-    # Create ground
-    create_ground(space)
+    def create_environment(self):
+        """Create ground and walls"""
+        self.ground = pymunk.Segment(
+            self.space.static_body,
+            (0, HEIGHT - 50),
+            (WIDTH, HEIGHT - 50),
+            5
+        )
+        self.ground.friction = 1.0
+        self.ground.elasticity = 0.8
+        self.space.add(self.ground)
     
-    # Create spring-mass system
-    spring_body, mass = spring.create_spring(space, (600, 200), 100, 30)
+    def draw_grid(self):
+        """Draw background grid"""
+        for x in range(0, WIDTH, GRID_SPACING):
+            pygame.draw.line(self.screen, GRID_COLOR, (x, 0), (x, HEIGHT), 1)
+        for y in range(0, HEIGHT, GRID_SPACING):
+            pygame.draw.line(self.screen, GRID_COLOR, (0, y), (WIDTH, y), 1)
     
-    # Create rolling ball
-    ball.create_ball(space, (200, HEIGHT-100), 30)
-    
-    # Create lever if needed
-    # lever.create_lever(space, ...)
-    
-    # Simulation loop
-    clock = pygame.time.Clock()
-    draw_options = pymunk.pygame_util.DrawOptions(window)
-    
-    running = True
-    while running:
+    def handle_events(self):
+        """Process user input"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-                
-        window.fill((30, 30, 30))
-        space.step(1/60.0)
-        space.debug_draw(draw_options)
-        pygame.display.flip()
-        clock.tick(60)
+                return False
+        return True
     
-    pygame.quit()
+    def update(self):
+        """Update physics"""
+        self.space.step(1/60.0)
+    
+    def render(self):
+        """Draw everything"""
+        self.screen.fill(BACKGROUND_COLOR)
+        self.draw_grid()
+
+        # Debug draw physics
+        self.space.debug_draw(self.draw_options)
+        
+        pygame.display.flip()
+    
+    def run(self):
+        """Main game loop"""
+        running = True
+        while running:
+            pass
+        pygame.quit()
 
 if __name__ == "__main__":
-    run()
+    """Run the simulation"""
+    simulation = PhysicsSimulation()
+    while True:
+        if not simulation.handle_events():
+            break
+        simulation.update()
+        simulation.render()
+        simulation.clock.tick(60)
+    pygame.quit()

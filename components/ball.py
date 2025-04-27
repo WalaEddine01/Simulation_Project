@@ -1,13 +1,27 @@
 import pymunk
+import pygame
 
-def create_ball(space, pos, radius=30, mass=10):
-    body = pymunk.Body()
-    body.position = pos
+class RollingBall:
+    def __init__(self, space, position, radius=30):
+        self.space = space
+        self.radius = radius
+        self.color = (65, 105, 225, 255)  # Royal blue with alpha
+        
+        # Physics body with moment of inertia for rolling
+        mass = 10
+        moment = pymunk.moment_for_circle(mass, 0, radius)
+        self.body = pymunk.Body(mass, moment)
+        self.body.position = position
+        
+        # Shape with friction for realistic rolling
+        self.shape = pymunk.Circle(self.body, radius)
+        self.shape.friction = 0.9
+        self.shape.elasticity = 0.7
+        self.shape.color = self.color
+        
+        space.add(self.body, self.shape)
     
-    shape = pymunk.Circle(body, radius)
-    shape.mass = mass
-    shape.friction = 0.9
-    shape.elasticity = 0.8
-    
-    space.add(body, shape)
-    return body
+    def draw(self, surface):
+        """Custom ball drawing with proper scaling"""
+        pos = int(self.body.position.x), int(self.body.position.y)
+        pygame.draw.circle(surface, self.color[:3], pos, self.radius)  # Remove alpha for Pygame
